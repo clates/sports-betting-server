@@ -16,6 +16,9 @@ const PORT = 3000; // The port your server will listen on
 // requests to this server without being blocked by browser security policies.
 app.use(cors());
 
+// Enable JSON body parsing for all routes (must be before route definitions)
+app.use(express.json());
+
 // 4. Define your mock data (expanded for educational purposes)
 const mockSportsData = {
     sports: [
@@ -412,7 +415,6 @@ app.get('/bets/:userId', (req, res) => {
 });
 
 // POST /bets - Place a new bet (simplified for educational purposes)
-app.use(express.json()); // Enable JSON body parsing for POST requests
 app.post('/bets', (req, res) => {
     const { userId, matchId, betType, amount } = req.body;
 
