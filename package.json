@@ -1,0 +1,16 @@
+{
+  "name": "sports-betting-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/clates/sports-betting-server.git",
+  "author": "Christopher Lates <ChristopherLates@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}
