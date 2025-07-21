@@ -11,7 +11,7 @@ function calculateBetAmounts(slip: SlipWithIP, availableToBet: number) {
   };
 }
 
-//// Do stuff down here
+//// Do stuff down here not above
 
 let highProfitibilitySlips = fetchAndFilter();
 console.log("High Profitibility Slips:", highProfitibilitySlips);
