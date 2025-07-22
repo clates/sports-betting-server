@@ -39,7 +39,25 @@ export interface Slip {
   homeTeamOdds: number;
   awayTeamOdds: number;
 }
-export interface SlipWithIP extends Slip {
+export interface SlipWithIP extends CombinedSlip {
   homeTeamIP: number;
   awayTeamIP: number;
+}
+export interface Halfslip {
+  bookType: BookType;
+  gameId: string;
+  lineType: LineType;
+  team: "home" | "away";
+  teamLine: number;
+  teamOdds: number;
+}
+export interface CombinedSlip {
+  bookTypeHome: BookType;
+  bookTypeAway: BookType;
+  gameId: string;
+  LineType: LineType;
+  homeTeamLine: number;
+  awayTeamLine: number;
+  homeTeamOdds: number;
+  awayTeamOdds: number;
 }

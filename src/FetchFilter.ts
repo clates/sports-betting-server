@@ -5,11 +5,13 @@ import {
   SportType,
   Game,
   SlipWithIP,
+  Halfslip,
+  CombinedSlip,
 } from "./data/types";
 import { slips } from "./data/slips";
 
 // Function for fetching all slips from all books
-function fetchAllSlips(): Slip[] {
+export function fetchAllSlips(): Slip[] {
   return Object.keys(slips).flatMap((gameId) => {
     return slips[gameId].map((slip) => ({
       ...slip,
@@ -21,13 +23,52 @@ function fetchAllSlips(): Slip[] {
 //let allSlips = fetchAllSlips()
 
 // Take AllSlips and filter by linetype
-function filterSlipsByLineType(inputSlips: Slip[], lineType) {
-  return inputSlips.filter((slip) => slip.lineType === lineType);
+
+// Take the slips with linetype spread and split the slips into two, having an home team halfslip and awayteam halfslip
+export function splitSlipsIntoHalfSlips(spreadSlips: Slip[]): Halfslip[] {
+  return spreadSlips.flatMap((slip) => {
+    return [
+      {
+        bookType: slip.bookType,
+        gameId: slip.gameId,
+        lineType: slip.lineType,
+        team: "home",
+        teamLine: slip.homeTeamLine,
+        teamOdds: slip.homeTeamOdds,
+      },
+      {
+        bookType: slip.bookType,
+        gameId: slip.gameId,
+        lineType: slip.lineType,
+        team: "away",
+        teamLine: slip.awayTeamLine,
+        teamOdds: slip.awayTeamOdds,
+      },
+    ];
+  });
 }
-// Take the slips with linetype:'spread'
-//let spreadSlips = filterSlipsByLineType(allSlips, 'spread');
+export function combineHalfSlips(halfSlips: Halfslip[]): CombinedSlip[] {
+  const homeSlips = halfSlips.filter((slip) => slip.team === "home");
+  const awaySlips = halfSlips.filter((slip) => slip.team === "away");
+  return homeSlips.flatMap((homeSlip) =>
+    awaySlips
+      // Only combine with away slips from the same game
+      .filter((awaySlip) => awaySlip.gameId === homeSlip.gameId)
+      .map((awaySlip) => ({
+        bookTypeHome: homeSlip.bookType,
+        bookTypeAway: awaySlip.bookType,
+        gameId: homeSlip.gameId,
+        LineType: homeSlip.lineType,
+        homeTeamLine: homeSlip.teamLine,
+        awayTeamLine: awaySlip.teamLine,
+        homeTeamOdds: homeSlip.teamOdds,
+        awayTeamOdds: awaySlip.teamOdds,
+      }))
+  );
+}
+
 //Given a slip converting the american odds(AO) to decimal odds(DO) (((AO/100)+1) for positive AO; ((100/AO)+1)for negative AO)
-function convertAmericanOddsToDecimal(americanOdds) {
+export function convertAmericanOddsToDecimal(americanOdds) {
   if (americanOdds > 0) {
     return americanOdds / 100 + 1;
   } else {
@@ -35,16 +76,18 @@ function convertAmericanOddsToDecimal(americanOdds) {
   }
 }
 //given DO convert the values into Implied Probability (IP) using the formula 1/DO
-function convertDecimalOddsToImpliedProbability(decimalOdds) {
+export function convertDecimalOddsToImpliedProbability(decimalOdds) {
   return 1 / decimalOdds;
 }
 //Given the IP of slips add two slips' IPs together to see if an arbitrage opportunity exists(IP1+IP2<1)
-function checkArbitrageOpportunity(ip1, ip2) {
+export function checkArbitrageOpportunity(ip1, ip2) {
   return ip1 + ip2 < 1;
 }
 //If the IP's do not present an arbitrage opportunity throw the slip away
-function filterArbitrageOpportunities(spreadSlips: Slip[]): Slip[] {
-  return spreadSlips.filter((slip, index, array) => {
+export function filterArbitrageOpportunities(
+  spreadSlips: SlipWithIP[]
+): SlipWithIP[] {
+  return spreadSlips.filter((slip) => {
     const ip = convertDecimalOddsToImpliedProbability(
       convertAmericanOddsToDecimal(slip.homeTeamOdds)
     );
@@ -55,14 +98,15 @@ function filterArbitrageOpportunities(spreadSlips: Slip[]): Slip[] {
   });
 }
 //filter the remaining slips by greatest profit guaranteed profit to least greatest profit gaurenteed( if the combination of two IP's is lower that means guarnteed profit is higher)
-function sortByGreatestProfitGuaranteed(spreadSlips: Slip[]): Slip[] {
+export function sortByGreatestProfitGuaranteed(
+  spreadSlips: SlipWithIP[]
+): SlipWithIP[] {
+  // Find Guaranteed Profit by subtracting TotalIP from 1 regardless if it's IpA or IpB
   return spreadSlips.sort((a, b) => {
-    return 0;
-    // const totalIpA = a.homeIp + a.awayIp;
-    // const totalIpB = b.homeIp + b.awayIp;
-
-    // // Sort in ascending order (lowest IP first = highest profit)
-    // return totalIpA - totalIpB;
+    const profitA = 1 - (a.homeTeamIP + a.awayTeamIP);
+    const profitB = 1 - (b.homeTeamIP + b.awayTeamIP);
+    // Put the profits into order with the smallest profit first
+    return profitA - profitB;
   });
 }
 
@@ -121,10 +165,14 @@ export function fetchAndFilter(debug = false): SlipWithIP[] {
   let allSlips = fetchAllSlips();
   // log allSlips
   debug && console.log("Fetched all slips:", allSlips);
-  let spreadSlips = filterSlipsByLineType(allSlips, "Spread");
-  debug && console.log("Filtered spread slips:", spreadSlips);
+  // let spreadSlips = filterSlipsByLineType(allSlips, "Spread");
+  // debug && console.log("Filtered spread slips:", spreadSlips);
+  let halfslips = splitSlipsIntoHalfSlips(allSlips);
+  debug && console.log("Split into half slips:", halfslips);
+  let combinedHalfSlips = combineHalfSlips(halfslips);
+  debug && console.log("Combined half slips:", combinedHalfSlips);
   // For every slip I need decimal odds for the home and away team using theconverting the american odds(AO) to decimal odds(DO) (((AO/100)+1) for positive AO; ((100/AO)+1)for negative AO)
-  let decimalSpreadSlips = spreadSlips.map((slip) => ({
+  let decimalSpreadSlips = combinedHalfSlips.map((slip) => ({
     ...slip,
     homeTeamDecimalOdds: convertAmericanOddsToDecimal(slip.homeTeamOdds),
     awayTeamDecimalOdds: convertAmericanOddsToDecimal(slip.awayTeamOdds),
@@ -132,7 +180,7 @@ export function fetchAndFilter(debug = false): SlipWithIP[] {
   debug && console.log("Decimal spread slips:", decimalSpreadSlips);
   //Given the IP of slips add two slips' IPs together to see if an arbitrage opportunity exists(IP1+IP2<1)
 
-  let DOtoIP = decimalSpreadSlips.map((slip) => ({
+  let DOtoIP: SlipWithIP[] = decimalSpreadSlips.map((slip) => ({
     ...slip,
     homeTeamIP: convertDecimalOddsToImpliedProbability(
       slip.homeTeamDecimalOdds

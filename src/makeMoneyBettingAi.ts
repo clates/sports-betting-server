@@ -1,13 +1,18 @@
+import { games } from "./data/slips";
 import { Slip, SlipWithIP } from "./data/types";
 import { fetchAndFilter } from "./FetchFilter";
 
 //calculate the amount of money(AoM) hat I place on each slip if I had 100$(Sm) by using the formula(AoM = Sm*(IP/TIP)), TIP is the IP of home team and away team combined or total ip
 function calculateBetAmounts(slip: SlipWithIP, availableToBet: number) {
   return {
-    homeTeamBet:
-      availableToBet * (slip.homeTeamIP / (slip.awayTeamIP + slip.homeTeamIP)),
-    awayTeamBet:
-      availableToBet * (slip.awayTeamIP / (slip.awayTeamIP + slip.homeTeamIP)),
+    homeTeamBet: (
+      availableToBet *
+      (slip.homeTeamIP / (slip.awayTeamIP + slip.homeTeamIP))
+    ).toFixed(2),
+    awayTeamBet: (
+      availableToBet *
+      (slip.awayTeamIP / (slip.awayTeamIP + slip.homeTeamIP))
+    ).toFixed(2),
   };
 }
 
@@ -21,6 +26,11 @@ console.log("Starting Amount:", startingAmount);
 // Here's how to map over the slips:
 let TeamBetAmounts = highProfitibilitySlips.map((slip) => {
   console.log("Processing slip:", slip);
-  return calculateBetAmounts(slip, startingAmount);
+  return { ...slip, ...calculateBetAmounts(slip, startingAmount) };
 });
+
 console.log("Bet Amounts for each slip:", TeamBetAmounts);
+Object.keys(games).forEach((gameId) => {
+  const count = TeamBetAmounts.filter((slip) => slip.gameId === gameId).length;
+  console.log(`Game ID ${gameId}: ${count} combined slips`);
+});
