@@ -6,12 +6,11 @@ import {
   Game,
   SlipWithIP,
   Halfslip,
+  GenericSlip,
+  CombinedSlip,
 } from "../data/types";
-import { games } from "../data/slips";
+import { games, slips } from "../data/slips";
 import {
-  splitSlipsIntoHalfSlips,
-  fetchAllSlips,
-  combineHalfSlips,
   convertAmericanOddsToDecimal,
   convertDecimalOddsToImpliedProbability,
   checkArbitrageOpportunity,
@@ -19,52 +18,64 @@ import {
   sortByGreatestProfitGuaranteed,
 } from "../FetchFilter";
 
-let allslips = fetchAllSlips();
-
-allslips = allslips
-  .filter(
-    (slip) =>
-      slip.bookType === BookType.DraftKings ||
-      slip.bookType === BookType.BetMGM ||
-      slip.bookType === BookType.Caesars ||
-      slip.bookType === BookType.PointsBet ||
-      slip.bookType === BookType.BetRivers ||
-      slip.bookType === BookType.Barstool ||
-      slip.bookType === BookType.Bet365 ||
-      slip.bookType === BookType.FanDuel
-  )
-  .filter(
-    (slip) =>
-      slip.gameId === "arbitrageGame2" || slip.gameId === "arbitrageGame1"
+export function fetchAllSlips(): GenericSlip[] {
+  return Object.keys(slips).flatMap((gameId) => {
+    return slips[gameId].map((slip) => ({
+      ...slip,
+      gameId: gameId,
+    }));
+  });
+}
+console.log("Halfslips:", splitSlipsIntoHalfSlips(fetchAllSlips()));
+export function splitSlipsIntoHalfSlips(
+  spreadSlips: GenericSlip[]
+): Halfslip[] {
+  return spreadSlips.flatMap((slip) =>
+    Object.entries(slip.odds).map(([outcome, odds]) => ({
+      bookType: slip.bookType,
+      gameId: slip.gameId,
+      lineType: slip.lineType,
+      outcome,
+      odds,
+    }))
   );
+}
+console.log(
+  "Combined Halfslips:",
+  combineHalfSlips(splitSlipsIntoHalfSlips(fetchAllSlips()))
+);
+export function combineHalfSlips(HalfSlips: Halfslip[]): any[] {
+  // Group by gameId
+  const grouped: { [gameId: string]: Halfslip[] } = {};
+  HalfSlips.forEach((slip) => {
+    if (!grouped[slip.gameId]) grouped[slip.gameId] = [];
+    grouped[slip.gameId].push(slip);
+  });
 
-console.log("All slips:", allslips);
-console.log("Starting Betting AI...");
-// log allslips
-console.log("Fetched all slips:", allslips);
-let halfslips = splitSlipsIntoHalfSlips(allslips);
-console.log("Split into half slips:", halfslips);
-let combinedHalfSlips = combineHalfSlips(halfslips);
-console.log("Combined half slips:", combinedHalfSlips);
-// For every slip I need decimal odds for the home and away team using theconverting the american odds(AO) to decimal odds(DO) (((AO/100)+1) for positive AO; ((100/AO)+1)for negative AO)
-let decimalSpreadSlips = combinedHalfSlips.map((slip) => ({
-  ...slip,
-  homeTeamDecimalOdds: convertAmericanOddsToDecimal(slip.homeTeamOdds),
-  awayTeamDecimalOdds: convertAmericanOddsToDecimal(slip.awayTeamOdds),
-}));
-console.log("Decimal spread slips:", decimalSpreadSlips);
-//Given the IP of slips add two slips' IPs together to see if an arbitrage opportunity exists(IP1+IP2<1)
-
-let DOtoIP: SlipWithIP[] = decimalSpreadSlips.map((slip) => ({
-  ...slip,
-  homeTeamIP: convertDecimalOddsToImpliedProbability(slip.homeTeamDecimalOdds),
-  awayTeamIP: convertDecimalOddsToImpliedProbability(slip.awayTeamDecimalOdds),
-}));
-
-console.log("Converted Decimal Odds to Implied Probability:", DOtoIP);
-let arbitrageOpportunities = filterArbitrageOpportunities(DOtoIP);
-
-console.log("Filtered arbitrage opportunities:", arbitrageOpportunities);
-
-let sortedByProfit = sortByGreatestProfitGuaranteed(arbitrageOpportunities);
-console.log("Sorted by greatest profit guaranteed:", sortedByProfit);
+  // For each game, generate all unique pairs of outcomes
+  const combined: any[] = [];
+  Object.values(grouped).forEach((slips) => {
+    for (let i = 0; i < slips.length; i++) {
+      for (let j = i + 1; j < slips.length; j++) {
+        // Only combine if outcomes are different
+        if (slips[i].outcome !== slips[j].outcome) {
+          combined.push({
+            gameId: slips[i].gameId,
+            lineType: slips[i].lineType,
+            outcomes: {
+              [slips[i].outcome]: {
+                bookType: slips[i].bookType,
+                odds: slips[i].odds,
+              },
+              [slips[j].outcome]: {
+                bookType: slips[j].bookType,
+                odds: slips[j].odds,
+              },
+            },
+          });
+        }
+      }
+    }
+  });
+  return combined;
+}

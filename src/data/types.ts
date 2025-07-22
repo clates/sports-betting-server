@@ -40,24 +40,28 @@ export interface Slip {
   awayTeamOdds: number;
 }
 export interface SlipWithIP extends CombinedSlip {
-  homeTeamIP: number;
-  awayTeamIP: number;
+  IPs: { [outcome: string]: number };
 }
 export interface Halfslip {
   bookType: BookType;
   gameId: string;
   lineType: LineType;
-  team: "home" | "away";
-  teamLine: number;
-  teamOdds: number;
+  outcome: string; // e.g. "home", "away", "draw", "overtime"
+  odds: number;
 }
 export interface CombinedSlip {
-  bookTypeHome: BookType;
-  bookTypeAway: BookType;
   gameId: string;
-  LineType: LineType;
-  homeTeamLine: number;
-  awayTeamLine: number;
-  homeTeamOdds: number;
-  awayTeamOdds: number;
+  lineType: LineType;
+  outcomes: {
+    [outcome: string]: {
+      bookType: BookType;
+      odds: number;
+    };
+  };
+}
+export interface GenericSlip {
+  bookType: BookType;
+  gameId: string;
+  lineType: LineType;
+  odds: { [outcome: string]: number }; // outcome could be "home", "away", "draw", etc.
 }

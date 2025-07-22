@@ -7,11 +7,12 @@ import {
   SlipWithIP,
   Halfslip,
   CombinedSlip,
+  GenericSlip,
 } from "./data/types";
 import { slips } from "./data/slips";
 
 // Function for fetching all slips from all books
-export function fetchAllSlips(): Slip[] {
+export function fetchAllSlips(): GenericSlip[] {
   return Object.keys(slips).flatMap((gameId) => {
     return slips[gameId].map((slip) => ({
       ...slip,
@@ -25,46 +26,55 @@ export function fetchAllSlips(): Slip[] {
 // Take AllSlips and filter by linetype
 
 // Take the slips with linetype spread and split the slips into two, having an home team halfslip and awayteam halfslip
-export function splitSlipsIntoHalfSlips(spreadSlips: Slip[]): Halfslip[] {
-  return spreadSlips.flatMap((slip) => {
-    return [
-      {
-        bookType: slip.bookType,
-        gameId: slip.gameId,
-        lineType: slip.lineType,
-        team: "home",
-        teamLine: slip.homeTeamLine,
-        teamOdds: slip.homeTeamOdds,
-      },
-      {
-        bookType: slip.bookType,
-        gameId: slip.gameId,
-        lineType: slip.lineType,
-        team: "away",
-        teamLine: slip.awayTeamLine,
-        teamOdds: slip.awayTeamOdds,
-      },
-    ];
-  });
-}
-export function combineHalfSlips(halfSlips: Halfslip[]): CombinedSlip[] {
-  const homeSlips = halfSlips.filter((slip) => slip.team === "home");
-  const awaySlips = halfSlips.filter((slip) => slip.team === "away");
-  return homeSlips.flatMap((homeSlip) =>
-    awaySlips
-      // Only combine with away slips from the same game
-      .filter((awaySlip) => awaySlip.gameId === homeSlip.gameId)
-      .map((awaySlip) => ({
-        bookTypeHome: homeSlip.bookType,
-        bookTypeAway: awaySlip.bookType,
-        gameId: homeSlip.gameId,
-        LineType: homeSlip.lineType,
-        homeTeamLine: homeSlip.teamLine,
-        awayTeamLine: awaySlip.teamLine,
-        homeTeamOdds: homeSlip.teamOdds,
-        awayTeamOdds: awaySlip.teamOdds,
-      }))
+export function splitSlipsIntoHalfSlips(
+  spreadSlips: GenericSlip[]
+): Halfslip[] {
+  return spreadSlips.flatMap((slip) =>
+    Object.entries(slip.odds).map(([outcome, odds]) => ({
+      bookType: slip.bookType,
+      gameId: slip.gameId,
+      lineType: slip.lineType,
+      outcome,
+      odds,
+    }))
   );
+}
+export function combineHalfSlips(halfSlips: Halfslip[]): any[] {
+  // Group by gameId
+  const grouped: { [gameId: string]: Halfslip[] } = {};
+  halfSlips.forEach((slip) => {
+    if (!grouped[slip.gameId]) grouped[slip.gameId] = [];
+    grouped[slip.gameId].push(slip);
+  });
+
+  // For each game, generate all unique pairs of outcomes
+  const combined: any[] = [];
+  Object.values(grouped).forEach((slips) => {
+    for (let i = 0; i < slips.length; i++) {
+      for (let j = i + 1; j < slips.length; j++) {
+        // Only combine if outcomes are different
+        if (slips[i].outcome !== slips[j].outcome) {
+          combined.push({
+            gameId: slips[i].gameId,
+            lineType: slips[i].lineType,
+            outcomes: [
+              {
+                outcome: slips[i].outcome,
+                bookType: slips[i].bookType,
+                odds: slips[i].odds,
+              },
+              {
+                outcome: slips[j].outcome,
+                bookType: slips[j].bookType,
+                odds: slips[j].odds,
+              },
+            ],
+          });
+        }
+      }
+    }
+  });
+  return combined;
 }
 
 //Given a slip converting the american odds(AO) to decimal odds(DO) (((AO/100)+1) for positive AO; ((100/AO)+1)for negative AO)
