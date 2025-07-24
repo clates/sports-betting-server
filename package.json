@@ -9,13 +9,16 @@
     "runBets": "ts-node src/makeMoneyBettingAi.ts",
     "runTestCode": "ts-node src/data/testcode.ts",
     "start": "ts-node src/server.ts",
-    "dev": "ts-node src/server.ts"
+    "dev": "ts-node src/server.ts",
+    "runAPIStream": "ts-node src/fetchFromBolt.ts"
   },
   "dependencies": {
     "@types/node": "^24.0.15",
+    "@types/ws": "^8.18.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "ws": "^8.18.3"
   }
 }

@@ -2,9 +2,9 @@ export enum BookType {
   DraftKings = "dk",
   FanDuel = "fd",
   BetMGM = "mgm",
-  Caesars = "caesars",
-  PointsBet = "pointsbet",
-  BetRivers = "betrivers",
+  Caesars = "crs",
+  PointsBet = "pb",
+  BetRivers = "br",
   Barstool = "barstool",
   Bet365 = "bet365",
 }
@@ -53,6 +53,7 @@ export interface Halfslip {
 export interface CombinedSlip {
   gameId: string;
   lineType: LineType;
+  
   outcomes: {
     [outcome: string]: {
       IP: number;
@@ -60,7 +61,9 @@ export interface CombinedSlip {
       odds: number;
       stake?: number;
     };
+     // Optional profit field
   };
+  profit?: number;
 }
 export interface GenericSlip {
   bookType: BookType;
