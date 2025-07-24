@@ -49,11 +49,14 @@ export interface Halfslip {
   IP: number;
   outcome: string; // e.g. "home", "away", "draw", "overtime"
   odds: number;
+  line: number; // e.g. spread, over/under
+  link: string; // URL to the bet slip
 }
 export interface CombinedSlip {
   gameId: string;
   lineType: LineType;
-  
+  line: number; // e.g. spread, over/under
+  link: string; // URL to the bet slip
   outcomes: {
     [outcome: string]: {
       IP: number;
@@ -61,7 +64,7 @@ export interface CombinedSlip {
       odds: number;
       stake?: number;
     };
-     // Optional profit field
+    // Optional profit field
   };
   profit?: number;
 }

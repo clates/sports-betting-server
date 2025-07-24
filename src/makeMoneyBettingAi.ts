@@ -1,8 +1,9 @@
-import { games } from "./data/slips";
 import { CombinedSlip, Slip, SlipWithIP } from "./data/types";
-import { FetchandFilterTC } from "./testcode";
+import { arbitrageOpportunities, FetchandFilterTC } from "./testcode";
 import { printObj } from "./data/formatting";
 import { getSampleData } from "./data/dataExplorer";
+import { translateJSONToHalfslips } from "./bigballs";
+import { slips } from "./data/slips";
 
 //calculate the amount of money(AoM) that I place on each outcome if I had 100$(Sm) by using the formula(AoM = Sm*(IP/TIP)), TIP is the total IP of all outcomes combined
 function calculateBetAmounts(
@@ -32,7 +33,7 @@ function calculateBetAmounts(
 
 //// Do stuff down here not above
 
-let highProfitibilitySlips = FetchandFilterTC();
+let highProfitibilitySlips = FetchandFilterTC(arbitrageOpportunities);
 // console.log("High Profitibility Slips:", highProfitibilitySlips);
 let startingAmount = 100;
 console.log("Starting Amount:", startingAmount);
@@ -42,11 +43,11 @@ let TeamBetAmounts = highProfitibilitySlips.map((slip) => {
   return calculateBetAmounts(slip, startingAmount);
 });
 printObj("Processing slip:", TeamBetAmounts);
-// console.log("Bet Amounts for each slip:", TeamBetAmounts);
-// Object.keys(games).forEach((gameId) => {
-//   const count = TeamBetAmounts.filter((slip) => slip.gameId === gameId).length;
-//   console.log(`Game ID ${gameId}: ${count} combined slips`);
-// });
+console.log("Bet Amounts for each slip:", TeamBetAmounts);
+Object.keys(slips).forEach((gameId) => {
+  const count = TeamBetAmounts.filter((slip) => slip.gameId === gameId).length;
+  console.log(`Game ID ${gameId}: ${count} combined slips`);
+});
 
 // let examplePrint = TeamBetAmounts[0];
 // console.log(
@@ -91,8 +92,8 @@ printObj("Processing slip:", TeamBetAmounts);
 //   console.log("\x1b[90m-----------------------------------\x1b[0m");
 // });
 
-let dataFromStream: any[] = getSampleData(3);
-console.log("\n=== DATA FROM STREAM ===");
-dataFromStream.forEach((item, index) => {
-  printObj(item);
-});
+// let dataFromStream: any[] = getSampleData(3);
+// console.log("\n=== DATA FROM STREAM ===");
+// dataFromStream.forEach((item, index) => {
+//   printObj(translateJSONToHalfslips(item), `Item ${index + 1}`);
+// });

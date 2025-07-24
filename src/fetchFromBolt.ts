@@ -36,10 +36,10 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
-async function runClient() {
+export async function runClient() {
   while (true) {
     try {
-      await new Promise<void>((resolve, reject) => {
+      return await new Promise<any[]>((resolve, reject) => {
         const ws = new WebSocket(uri);
 
         ws.on("open", () => {
@@ -92,6 +92,9 @@ async function runClient() {
                 "Resulting translated object:",
                 genericSlipTranslatedFromTheirData
               );
+              if (parsed.action != "initial_state") {
+                resolve(collectedData);
+              }
             } catch (err) {
               // Also collect raw data that fails to parse
               const dataEntry = {
@@ -108,13 +111,13 @@ async function runClient() {
 
         ws.on("close", (code, reason) => {
           console.warn(`Connection closed — code: ${code}, reason: ${reason}`);
-          resolve(); // Allow outer loop to handle reconnect
+          resolve([]); // Allow outer loop to handle reconnect
         });
 
         ws.on("error", (err) => {
           console.error("WebSocket error:", err);
           ws.close();
-          resolve();
+          resolve([]);
         });
       });
 
@@ -126,5 +129,3 @@ async function runClient() {
     }
   }
 }
-
-runClient();
