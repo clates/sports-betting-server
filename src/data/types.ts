@@ -74,3 +74,21 @@ export interface GenericSlip {
   lineType: LineType;
   odds: { [outcome: string]: number }; // outcome could be "home", "away", "draw", etc.
 }
+
+export interface BettableLine {
+    [line: number]: {
+      [outcome: string]: {
+        bookType: BookType;
+        odds: number;
+        link: string; // URL to the bet slip
+        IP:number;
+      };
+    };
+}
+
+export interface GameBestSlips {
+  gameId: string;
+  lines: {
+  [lineType: string]: BettableLine;
+  }
+}

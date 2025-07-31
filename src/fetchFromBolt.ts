@@ -48,14 +48,14 @@ export async function runClient() {
 
         ws.on("message", (data) => {
           const message = data.toString();
-          console.log("Received:", message);
+          // console.log("Received:", message);
 
           // Send subscription message after initial ack
           const subscribeMessage = {
             action: "subscribe",
             filters: {
               sports: ["MLB"],
-              //   sportsbooks: ['draftkings', 'betmgm'],
+                 sportsbooks: ['draftkings', 'fanduel',' betmgm' ],
               //   games: [
               //     'San Francisco Giants vs Philadelphia Phillies, 2025-07-07, 09',
               //     'Corinthians vs Bragantino, 2025-07-13, 06'
@@ -81,10 +81,16 @@ export async function runClient() {
             try {
               const parsed = JSON.parse(incoming);
 
+              if (parsed.action !== "initial_state") {
+                resolve(collectedData);
+                ws.close();
+                return;
+              }
               // Add timestamp and collect data as-is
               collectedData.push(parsed);
 
               console.log("Data stream:");
+              console.log(Object.keys(parsed));
               console.log(JSON.stringify(parsed, null, 2));
               let genericSlipTranslatedFromTheirData =
                 translateToMyObject(parsed);
@@ -92,9 +98,6 @@ export async function runClient() {
                 "Resulting translated object:",
                 genericSlipTranslatedFromTheirData
               );
-              if (parsed.action != "initial_state") {
-                resolve(collectedData);
-              }
             } catch (err) {
               // Also collect raw data that fails to parse
               const dataEntry = {
@@ -129,3 +132,4 @@ export async function runClient() {
     }
   }
 }
+//runClient()

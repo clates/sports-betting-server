@@ -6,6 +6,7 @@
   "author": "Christopher Lates <ChristopherLates@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "runMeAndOnlyMe": "ts-node src/runMeAndOnlyMe.ts",
     "runBets": "ts-node src/makeMoneyBettingAi.ts",
     "runTestCode": "ts-node src/data/testcode.ts",
     "start": "ts-node src/server.ts",

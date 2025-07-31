@@ -16,12 +16,12 @@ const SPORTSBOOK_MAPPING = {
   bet365: BookType.Bet365,
 };
 
-export function translateJSONToHalfslips(jsonData: any): Halfslip[] {
+export function translateJSONToHalfslips (jsonData: any): Halfslip[] {
   const halfslips: Halfslip[] = [];
 
   // Extract the main data we need
   const { data } = jsonData;
-  const gameId = data.info.game_id;
+  const gameId = data.game;
   const sportsbook = data.sportsbook;
 
   // Map the sportsbook name to our BookType enum

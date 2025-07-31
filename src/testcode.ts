@@ -8,6 +8,7 @@ import {
   Halfslip,
   GenericSlip,
   CombinedSlip,
+  GameBestSlips,
 } from "./data/types";
 import { games, slips } from "./data/slips";
 import {
@@ -17,48 +18,49 @@ import {
 import { printObj } from "./data/formatting";
 import { translateJSONToHalfslips } from "./bigballs";
 import { getSampleData } from "./data/dataExplorer";
-let dataFromStream: any[] = getSampleData(50);
-console.log("\n=== DATA FROM STREAM ===");
-let halfSlipsFromDataStream: Halfslip[] = [];
-dataFromStream.forEach((item, index) => {
-  halfSlipsFromDataStream.concat(translateJSONToHalfslips(item));
-});
-export function fetchAllSlips(): Halfslip[] {
-  return Object.keys(slips).flatMap((gameId) => {
-    return slips[gameId].map((slip) => ({
-      ...slip,
-      gameId: gameId,
-      IP: 420,
-      outcome: "placeholder", // Placeholder, adjust as needed
-      odds: 69, // Placeholder, adjust as needed
-      line: 42069, // Placeholder, adjust as needed
-      link: "bar", // Placeholder, adjust as needed
-      IPs: Object.keys(slip.odds).reduce((acc, outcome) => {
-        acc[outcome] = convertDecimalOddsToImpliedProbability(
-          convertAmericanOddsToDecimal(slip.odds[outcome])
-        );
-        return acc;
-      }, {}),
-    }));
-  });
-}
+ 
+// let dataFromStream: any[] = getSampleData(50);
+// console.log("\n=== DATA FROM STREAM ===");
+// let halfSlipsFromDataStream: Halfslip[] = [];
+// dataFromStream.forEach((item, index) => {
+//   halfSlipsFromDataStream.concat(translateJSONToHalfslips(item));
+// });
+// export function fetchAllSlips(): Halfslip[] {
+//   return Object.keys(slips).flatMap((gameId) => {
+//     return slips[gameId].map((slip) => ({
+//       ...slip,
+//       gameId: gameId,
+//       IP: 420,
+//       outcome: "placeholder", // Placeholder, adjust as needed
+//       odds: 69, // Placeholder, adjust as needed
+//       line: 42069, // Placeholder, adjust as needed
+//       link: "bar", // Placeholder, adjust as needed
+//       IPs: Object.keys(slip.odds).reduce((acc, outcome) => {
+//         acc[outcome] = convertDecimalOddsToImpliedProbability(
+//           convertAmericanOddsToDecimal(slip.odds[outcome])
+//         );
+//         return acc;
+//       }, {}),
+//     }));
+//   });
+// }
 
-export function splitSlipsIntoHalfSlips(spreadSlips: SlipWithIP[]): Halfslip[] {
-  return spreadSlips.flatMap((slip) =>
-    Object.entries(slip.odds).map(([outcome, odds]) => ({
-      bookType: slip.bookType,
-      gameId: slip.gameId,
-      lineType: slip.lineType,
-      line: 42069,
-      link: "bar", // Placeholder, adjust as needed
-      outcome,
-      odds,
-      IP: slip.IPs[outcome],
-    }))
-  );
-}
+// export function splitSlipsIntoHalfSlips(spreadSlips: SlipWithIP[]): Halfslip[] {
+//   return spreadSlips.flatMap((slip) =>
+//     Object.entries(slip.odds).map(([outcome, odds]) => ({
+//       bookType: slip.bookType,
+//       gameId: slip.gameId,
+//       lineType: slip.lineType,
+//       line: 42069,
+//       link: "bar", // Placeholder, adjust as needed
+//       outcome,
+//       odds,
+//       IP: slip.IPs[outcome],
+//     }))
+//   );
+// }
 
-const Combined = combineHalfSlips(halfSlipsFromDataStream);
+
 // printObj("Combined Halfslips:", Combined.slice(0, 10));
 export function getCombinations<T>(arr: T[], comboSize: number): T[][] {
   if (comboSize === 1) return arr.map((item) => [item]);
@@ -77,18 +79,18 @@ export function cartesianProduct<T>(...arrays: T[][]): T[][] {
   );
 }
 
-export const arbitrageOpportunities = Combined.filter((combo) => {
-  const comboIP = Object.keys(combo.outcomes).map(
-    (outcome) => combo.outcomes[outcome].IP
-  );
-  return arbitrageOpportunityIsAvailable(comboIP);
-});
-printObj("Arbitrage Opportunities!", arbitrageOpportunities.slice(0, 10));
 
-printObj(
-  "Sorted by Greatest Profit Guaranteed:",
-  sortByGreatestProfitGuaranteed(arbitrageOpportunities).slice(0, 20)
-);
+//   const comboIP = Object.keys(combo.outcomes).map(
+//     (outcome) => combo.outcomes[outcome].IP
+//   );
+//   return arbitrageOpportunityIsAvailable(comboIP);
+// });
+// printObj("Arbitrage Opportunities!", arbitrageOpportunities.slice(0, 10));
+
+// printObj(
+//   "Sorted by Greatest Profit Guaranteed:",
+//   sortByGreatestProfitGuaranteed(arbitrageOpportunities).slice(0, 20)
+// );
 
 //._.-._.-._.-._.-._.Xx_Definitions below this_xX
 
@@ -175,4 +177,182 @@ export function convertDecimalOddsToImpliedProbability(decimalOdds) {
 }
 export function Profitibility(IPs: number) {
   return Math.round((1 - IPs) * 1000) / 1000;
+}
+export function filterHalfSlips(
+  halfslips: Halfslip[],
+  gameId: string,
+  lineType: LineType,
+  line: number
+): Halfslip[] {
+  return halfslips.filter(
+    (halfslip) =>
+      halfslip.gameId === gameId &&
+      halfslip.lineType === lineType &&
+      halfslip.line === line
+  );
+}
+export function findLowestIP(
+  halfslips: Halfslip[],
+  gameId: string,
+  lineType: LineType,
+  line: number,
+  outcome: string
+): number | undefined {
+  // Start with Infinity so any real IP will be lower
+  let lowestIP = Infinity;
+  halfslips.forEach((halfslip) => {
+    if (
+      halfslip.gameId === gameId &&
+      halfslip.lineType === lineType &&
+      halfslip.line === line &&
+      halfslip.outcome === outcome
+    ) {
+      if (halfslip.IP < lowestIP) {
+        lowestIP = halfslip.IP;
+      }
+    }
+  });
+  return lowestIP === Infinity ? undefined : lowestIP;
+}
+
+export function groupHalfslipsToGameBestSlips(halfslips: Halfslip[]): GameBestSlips[] {
+  const grouped: { [gameId: string]: GameBestSlips } = {};
+
+  halfslips.forEach((halfslip) => {
+    if (!grouped[halfslip.gameId]) {
+      grouped[halfslip.gameId] = {
+        gameId: halfslip.gameId,
+        lines: {},
+      };
+    }
+    const lines = grouped[halfslip.gameId].lines;
+    const lineTypeKey = halfslip.lineType;
+    if (!lines[lineTypeKey]) {
+      lines[lineTypeKey] = {};
+    }
+    // Use absolute value of line as key, and group by + and - direction
+    const absLine = Math.abs(halfslip.line);
+    if (!lines[lineTypeKey][absLine]) {
+      lines[lineTypeKey][absLine] = { plus: null, minus: null };
+    }
+    if (halfslip.line > 0) {
+      lines[lineTypeKey][absLine].plus = {
+        ...halfslip
+      };
+    } else if (halfslip.line < 0) {
+      lines[lineTypeKey][absLine].minus = {
+        ...halfslip
+      };
+    }
+  });
+
+  // Now, for each absLine, pair plus and minus together if both exist
+  const result: GameBestSlips[] = [];
+  Object.values(grouped).forEach((gameBestSlip) => {
+    const newLines: any = {};
+    Object.entries(gameBestSlip.lines).forEach(([lineType, absLineGroups]) => {
+      newLines[lineType] = {};
+      Object.entries(absLineGroups).forEach(([absLine, pair]) => {
+        if (pair.plus && pair.minus) {
+          newLines[lineType][absLine] = {
+            plus: pair.plus,
+            minus: pair.minus
+          };
+        }
+      });
+    });
+    result.push({
+      gameId: gameBestSlip.gameId,
+      lines: newLines
+    });
+  });
+
+  return result;
+}
+export function getLowestIPHalfslips(halfslips: Halfslip[]): GameBestSlips[] {
+  const grouped: { [gameId: string]: GameBestSlips } = {};
+
+  halfslips.forEach((halfslip) => {
+    if (!grouped[halfslip.gameId]) {
+      grouped[halfslip.gameId] = {
+        gameId: halfslip.gameId,
+        lines: {},
+      };
+    }
+    const lines = grouped[halfslip.gameId].lines;
+    const lineTypeKey = halfslip.lineType;
+    if (!lines[lineTypeKey]) {
+      lines[lineTypeKey] = {};
+    }
+    const absLine = Math.abs(halfslip.line);
+    if (!lines[lineTypeKey][absLine]) {
+      lines[lineTypeKey][absLine] = {};
+    }
+    // Only keep the lowest IP for each outcome
+    const outcomeKey = halfslip.outcome;
+    if (
+      !lines[lineTypeKey][absLine][outcomeKey] ||
+      halfslip.IP < lines[lineTypeKey][absLine][outcomeKey].IP
+    ) {
+      lines[lineTypeKey][absLine][outcomeKey] = { ...halfslip };
+    }
+  });
+
+  // Only keep groups with at least two different outcomes (e.g., "home" and "away")
+return Object.values(grouped).map(group => {
+  const filteredLines: any = {};
+  Object.entries(group.lines).forEach(([lineType, absLineGroups]) => {
+    filteredLines[lineType] = {};
+    Object.entries(absLineGroups).forEach(([absLine, outcomes]) => {
+      // Get all unique outcome names
+      const outcomeNames = Object.values(outcomes).map(o => (o as Halfslip).outcome);
+      const uniqueOutcomes = Array.from(new Set(outcomeNames));
+      // Only keep if there are at least two different outcome names
+      if (uniqueOutcomes.length >= 2 && uniqueOutcomes[0] !== uniqueOutcomes[1]) {
+        // Only include if outcomes are different
+        const filteredOutcomes: any = {};
+        uniqueOutcomes.forEach(name => {
+          filteredOutcomes[name] = (Object.values(outcomes) as Halfslip[]).find(o => o.outcome === name);
+        });
+        filteredLines[lineType][absLine] = filteredOutcomes;
+      }
+    });
+  });
+  return {
+    gameId: group.gameId,
+    lines: filteredLines
+  };
+});
+}
+export function filterArbitragePairs(groups: GameBestSlips[]): GameBestSlips[] {
+  return groups
+    .map(group => {
+      const filteredLines: any = {};
+      Object.entries(group.lines).forEach(([lineType, absLineGroups]) => {
+        filteredLines[lineType] = {};
+        Object.entries(absLineGroups).forEach(([absLine, pair]) => {
+          if (pair.plus && pair.minus) {
+            const combinedIP = pair.plus.IP + pair.minus.IP;
+            if (combinedIP < 1) {
+              filteredLines[lineType][absLine] = {
+                plus: pair.plus,
+                minus: pair.minus,
+                combinedIP
+              };
+            }
+          }
+        });
+      });
+      return {
+        gameId: group.gameId,
+        lines: filteredLines
+      };
+    })
+    // Only keep groups with at least one arbitrage pair
+    .filter(group =>
+      Object.values(group.lines).some(
+        (absLineGroups: any) =>
+          Object.keys(absLineGroups).length > 0
+      )
+    );
 }
