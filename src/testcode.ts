@@ -235,13 +235,19 @@ export function groupHalfslipsToGameBestSlips(halfslips: Halfslip[]): GameBestSl
     if (!lines[lineTypeKey][lineKey]) {
       lines[lineTypeKey][lineKey] = {};
     }
-    // Store by outcome as key, matching BettableLine structure
-    lines[lineTypeKey][lineKey][halfslip.outcome] = {
-      bookType: halfslip.bookType,
-      odds: halfslip.odds,
-      link: halfslip.link,
-      IP: halfslip.IP
-    };
+    // Store by outcome as key, but keep only the lowest IP for cross-book arbitrage
+    const outcomeKey = halfslip.outcome;
+    if (
+      !lines[lineTypeKey][lineKey][outcomeKey] ||
+      halfslip.IP < lines[lineTypeKey][lineKey][outcomeKey].IP
+    ) {
+      lines[lineTypeKey][lineKey][outcomeKey] = {
+        bookType: halfslip.bookType,
+        odds: halfslip.odds,
+        link: halfslip.link,
+        IP: halfslip.IP
+      };
+    }
   });
 
   // Now, for each positive line, find its negative counterpart with different outcome
@@ -285,6 +291,7 @@ export function groupHalfslipsToGameBestSlips(halfslips: Halfslip[]): GameBestSl
 
   return result;
 }
+
 export function getLowestIPHalfslips(halfslips: Halfslip[]): GameBestSlips[] {
   const grouped: { [gameId: string]: GameBestSlips } = {};
 

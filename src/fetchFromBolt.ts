@@ -54,13 +54,13 @@ export async function runClient() {
           const subscribeMessage = {
             action: "subscribe",
             filters: {
-              sports: ["MLB","NFL", "NHL","MLS", "NBA", "WNBA","EPL","MLS", ],
+              sports: ["MLB","NFL", "NHL","MLS", "NBA", "WNBA","EPL","MLS","NHL","NCAA Hockey","NCAAB","NCAA Baseball","Bundesliga", "La Liga", "Serie A", "Ligue 1", "Primera Liga", "Chinese SuperLeague","Liga MX","Brazil Serie A"],
                  sportsbooks: ['draftkings', 'fanduel',' betmgm' ],
               //   games: [
               //     'San Francisco Giants vs Philadelphia Phillies, 2025-07-07, 09',
               //     'Corinthians vs Bragantino, 2025-07-13, 06'
               //   ],
-              markets: ["Spread"],
+              markets: ["Spread","Money",],
             },
           };
 
