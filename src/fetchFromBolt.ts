@@ -54,7 +54,7 @@ export async function runClient() {
           const subscribeMessage = {
             action: "subscribe",
             filters: {
-              sports: ["MLB"],
+              sports: ["MLB","NFL", "NHL","MLS", "NBA", "WNBA","EPL","MLS", ],
                  sportsbooks: ['draftkings', 'fanduel',' betmgm' ],
               //   games: [
               //     'San Francisco Giants vs Philadelphia Phillies, 2025-07-07, 09',

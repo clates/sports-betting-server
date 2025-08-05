@@ -230,41 +230,57 @@ export function groupHalfslipsToGameBestSlips(halfslips: Halfslip[]): GameBestSl
     if (!lines[lineTypeKey]) {
       lines[lineTypeKey] = {};
     }
-    // Use absolute value of line as key, and group by + and - direction
-    const absLine = Math.abs(halfslip.line);
-    if (!lines[lineTypeKey][absLine]) {
-      lines[lineTypeKey][absLine] = { plus: null, minus: null };
+    // Use actual line value as key to pair +X with -X
+    const lineKey = halfslip.line;
+    if (!lines[lineTypeKey][lineKey]) {
+      lines[lineTypeKey][lineKey] = {};
     }
-    if (halfslip.line > 0) {
-      lines[lineTypeKey][absLine].plus = {
-        ...halfslip
-      };
-    } else if (halfslip.line < 0) {
-      lines[lineTypeKey][absLine].minus = {
-        ...halfslip
-      };
-    }
+    // Store by outcome as key, matching BettableLine structure
+    lines[lineTypeKey][lineKey][halfslip.outcome] = {
+      bookType: halfslip.bookType,
+      odds: halfslip.odds,
+      link: halfslip.link,
+      IP: halfslip.IP
+    };
   });
 
-  // Now, for each absLine, pair plus and minus together if both exist
+  // Now, for each positive line, find its negative counterpart with different outcome
   const result: GameBestSlips[] = [];
   Object.values(grouped).forEach((gameBestSlip) => {
     const newLines: any = {};
-    Object.entries(gameBestSlip.lines).forEach(([lineType, absLineGroups]) => {
+    Object.entries(gameBestSlip.lines).forEach(([lineType, lineGroups]) => {
       newLines[lineType] = {};
-      Object.entries(absLineGroups).forEach(([absLine, pair]) => {
-        if (pair.plus && pair.minus) {
-          newLines[lineType][absLine] = {
-            plus: pair.plus,
-            minus: pair.minus
-          };
+      Object.entries(lineGroups).forEach(([lineKey, outcomes]) => {
+        const line = parseFloat(lineKey);
+        if (line > 0) {
+          // Look for the negative counterpart
+          const negativeLineKey = (-line).toString();
+          const negativeOutcomes = lineGroups[negativeLineKey];
+          
+          if (negativeOutcomes && Object.keys(outcomes).length > 0 && Object.keys(negativeOutcomes).length > 0) {
+            // Find pairs with different outcomes
+            Object.entries(outcomes).forEach(([positiveOutcome, positiveSlip]) => {
+              Object.entries(negativeOutcomes).forEach(([negativeOutcome, negativeSlip]) => {
+                if (positiveOutcome !== negativeOutcome) {
+                  const absLine = Math.abs(line);
+                  if (!newLines[lineType][absLine]) {
+                    newLines[lineType][absLine] = {};
+                  }
+                  newLines[lineType][absLine][positiveOutcome] = positiveSlip;
+                  newLines[lineType][absLine][negativeOutcome] = negativeSlip;
+                }
+              });
+            });
+          }
         }
       });
     });
-    result.push({
-      gameId: gameBestSlip.gameId,
-      lines: newLines
-    });
+    if (Object.keys(newLines).some(lineType => Object.keys(newLines[lineType]).length > 0)) {
+      result.push({
+        gameId: gameBestSlip.gameId,
+        lines: newLines
+      });
+    }
   });
 
   return result;

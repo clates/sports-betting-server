@@ -1,6 +1,7 @@
 import { CombinedSlip, Slip, SlipWithIP } from "./data/types";
-import { arbitrageOpportunities, FetchandFilterTC } from "./testcode";
+import { FetchandFilterTC } from "./testcode";
 import { printObj } from "./data/formatting";
+// import { arbitrageOpportunities } from "./testcode";
 import { getSampleData } from "./data/dataExplorer";
 import { translateJSONToHalfslips } from "./bigballs";
 import { slips } from "./data/slips";
